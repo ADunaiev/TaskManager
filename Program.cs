@@ -49,10 +49,10 @@ namespace Pattern5_Task1
         public override string ToString()
         {
             return $"Задача: {name},\n" +
-                $"описание {description}\n" +
+                $"описание: {description}\n" +
                 $"дед-лайн: {DeadLine.ToShortDateString()}\n" +
                 $"приоритет: {Priority}\n" +
-                $"тег: {Tag}\n\n";
+                $"тег: {Tag}\n";
         }
     }
     public interface ICommand
@@ -89,6 +89,34 @@ namespace Pattern5_Task1
             Console.WriteLine(receiver.ToString(tasklist));
         }
     }
+    class SetPriority: ICommand
+    {
+        private Receiver receiver;
+        private TaskList tasklist;
+        public SetPriority(Receiver _receiver, TaskList _tasklist)
+        {
+            receiver = _receiver;
+            tasklist = _tasklist;
+        }
+        public void Execute()
+        {
+            receiver.SetPriority(tasklist);
+        }
+    }
+    class SetDeadLines : ICommand
+    {
+        private Receiver receiver;
+        private TaskList tasklist;
+        public SetDeadLines(Receiver _receiver, TaskList _tasklist)
+        {
+            receiver = _receiver;
+            tasklist = _tasklist;
+        }
+        public void Execute()
+        {
+            receiver.SetDeadLines(tasklist);
+        }
+    }
     class Receiver
     {
         public void AddTask(TaskList obj)
@@ -96,8 +124,26 @@ namespace Pattern5_Task1
             Task t1 = new Task();
             Console.WriteLine("Введите задачу: ");
             t1.name = Console.ReadLine();
+
             Console.WriteLine("Введите описание: ");
             t1.description = Console.ReadLine();
+
+            Console.WriteLine("Введите дату выполнения: ");
+            t1.DeadLine = Convert.ToDateTime(Console.ReadLine());
+
+            Console.WriteLine("Выберите приоритет: 1-низкий; " +
+                "2 - средний; 3 - высокий");
+            int temp = Convert.ToInt32(Console.ReadLine());
+            if (temp == 2)
+                t1.Priority = PriorityType.Medium;
+            else if (temp == 3)
+                t1.Priority = PriorityType.High;
+            else
+                t1.Priority = PriorityType.Low;
+
+            Console.WriteLine("Введите тег: ");
+            t1.Tag = Console.ReadLine();
+
             obj.ListOfTasks.Add(t1);
         }
         public string ToString(TaskList obj)
@@ -105,10 +151,37 @@ namespace Pattern5_Task1
             string temp = string.Empty;
             foreach(var it in obj.ListOfTasks)
             {
-                temp += it.ToString();
+                temp += it.ToString() + "\n";
             }
 
             return temp;
+        }
+        public void SetPriority(TaskList obj)
+        {          
+            for (int i = 0; i < obj.ListOfTasks.Count; i++)
+            {
+                Console.WriteLine(obj.ListOfTasks[i]);
+
+                Console.WriteLine("Выберите приоритет: 1-низкий; " +
+                "2 - средний; 3 - высокий");
+                int temp = Convert.ToInt32(Console.ReadLine());
+                if (temp == 2)
+                    obj.ListOfTasks[i].Priority = PriorityType.Medium;
+                else if (temp == 3)
+                    obj.ListOfTasks[i].Priority = PriorityType.High;
+                else
+                    obj.ListOfTasks[i].Priority = PriorityType.Low;
+
+            }
+        }
+        public void SetDeadLines(TaskList obj)
+        {
+            foreach (var it in obj.ListOfTasks)
+            {
+                Console.WriteLine(it.ToString());
+                Console.WriteLine("Введите новую дату выполнения: ");
+                it.DeadLine = Convert.ToDateTime(Console.ReadLine());              
+            }
         }
         
     }
@@ -187,7 +260,16 @@ namespace Pattern5_Task1
                         }
                         break;
                     case 2:
-                        { }
+                        {
+                            invoker.SetCommand(new SetPriority(receiver, t1));
+                            invoker.DoCommand();
+                        }
+                        break;
+                    case 3:
+                        {
+                            invoker.SetCommand(new SetDeadLines(receiver, t1));
+                            invoker.DoCommand();
+                        }
                         break;
                     case 10:
                         {
@@ -201,7 +283,9 @@ namespace Pattern5_Task1
                     case 0:
                         return;
                     default:
-                        { }
+                        {
+                            Console.WriteLine("Сделайте правильный выбор");
+                        }
                         break;
                 }
             }
