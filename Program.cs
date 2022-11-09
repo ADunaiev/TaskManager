@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -117,6 +118,85 @@ namespace Pattern5_Task1
             receiver.SetDeadLines(tasklist);
         }
     }
+    class SetTags : ICommand
+    {
+        private Receiver receiver;
+        private TaskList tasklist;
+        public SetTags(Receiver _receiver, TaskList _tasklist)
+        {
+            receiver = _receiver;
+            tasklist = _tasklist;
+        }
+        public void Execute()
+        {
+            receiver.SetTags(tasklist);
+        }
+
+    }
+    class ChangeTask : ICommand
+    {
+        private TaskList taskList;
+        private Receiver receiver;
+        public ChangeTask(Receiver _receiver, TaskList _taskList)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+        }
+        public void Execute()
+        {          
+            receiver.ChangeTask(taskList);
+        }
+    }
+    class DeleteTask : ICommand
+    {
+        private TaskList taskList;
+        private Receiver receiver;
+        public DeleteTask(Receiver _receiver, TaskList _taskList)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+        }
+        public void Execute()
+        {
+            receiver.DeleteTask(taskList);
+        }
+    }
+    class SaveToFile: ICommand
+    {
+        public string filepath { get; set; }
+        private TaskList taskList;
+        private Receiver receiver;
+        public SaveToFile(Receiver _receiver, TaskList _taskList)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+            filepath = "tasks.dat";
+        }
+        public SaveToFile(Receiver _receiver, TaskList _taskList, string str)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+            filepath = str + ".dat";
+        }
+        public void Execute()
+        {
+            receiver.SaveToFile(taskList, filepath);
+        }
+    }
+    class LoadFromFile:ICommand
+    {
+        private TaskList taskList;
+        private Receiver receiver;
+        public LoadFromFile(Receiver _receiver, TaskList _taskList)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+        }
+        public void Execute()
+        {
+            receiver.LoadFromFile(taskList);
+        }
+    }
     class Receiver
     {
         public void AddTask(TaskList obj)
@@ -149,9 +229,10 @@ namespace Pattern5_Task1
         public string ToString(TaskList obj)
         {
             string temp = string.Empty;
+            int count = 1;
             foreach(var it in obj.ListOfTasks)
             {
-                temp += it.ToString() + "\n";
+                temp += "Задача " + count++ + "\n" + it.ToString() + "\n";
             }
 
             return temp;
@@ -171,7 +252,7 @@ namespace Pattern5_Task1
                     obj.ListOfTasks[i].Priority = PriorityType.High;
                 else
                     obj.ListOfTasks[i].Priority = PriorityType.Low;
-
+                Console.WriteLine();
             }
         }
         public void SetDeadLines(TaskList obj)
@@ -180,7 +261,121 @@ namespace Pattern5_Task1
             {
                 Console.WriteLine(it.ToString());
                 Console.WriteLine("Введите новую дату выполнения: ");
-                it.DeadLine = Convert.ToDateTime(Console.ReadLine());              
+                it.DeadLine = Convert.ToDateTime(Console.ReadLine());
+                Console.WriteLine();
+            }
+        }
+        public void SetTags(TaskList obj)
+        {
+            foreach (var it in obj.ListOfTasks)
+            {
+                Console.WriteLine(it.ToString());
+                Console.WriteLine("Введите новый тег: ");
+                it.Tag = Console.ReadLine();
+                Console.WriteLine();
+            }
+        }
+        public void ChangeTask(TaskList obj)
+        {
+            Console.WriteLine("Введите номер задачи, которую нужно изменить: ");
+            Int32 temp = -1;
+            temp = Convert.ToInt32(Console.ReadLine()) - 1;
+
+            if (temp >= 0 && temp < obj.ListOfTasks.Count)
+            {
+                Task task1 = new Task();
+                Console.WriteLine("Введите новое названии задачи: ");
+                task1.name = Console.ReadLine();
+
+                Console.WriteLine("Введите описание: ");
+                task1.description = Console.ReadLine();
+
+                Console.WriteLine("Введите дату выполнения: ");
+                task1.DeadLine = Convert.ToDateTime(Console.ReadLine());
+
+                Console.WriteLine("Выберите приоритет: 1-низкий; " +
+                    "2 - средний; 3 - высокий");
+                int temp2 = Convert.ToInt32(Console.ReadLine());
+                if (temp2 == 2)
+                    task1.Priority = PriorityType.Medium;
+                else if (temp2 == 3)
+                    task1.Priority = PriorityType.High;
+                else
+                    task1.Priority = PriorityType.Low;
+
+                Console.WriteLine("Введите тег: ");
+                task1.Tag = Console.ReadLine();
+
+                obj.ListOfTasks[temp] = task1;
+            }
+        }
+        public void DeleteTask(TaskList obj)
+        {
+            Console.WriteLine("Введите номер задачи, которую нужно удалить: ");
+            Int32 temp = -1;
+            temp = Convert.ToInt32(Console.ReadLine()) - 1;
+
+            obj.ListOfTasks.Remove(obj.ListOfTasks[temp]);
+        }
+        public void SaveToFile(TaskList obj, string _filepath)
+        {
+            using (FileStream fs = new FileStream(_filepath, FileMode.Create,
+                FileAccess.Write, FileShare.None)) 
+            {
+                using (BinaryWriter bw = 
+                    new BinaryWriter(fs, Encoding.Unicode))
+                {
+                    foreach(var item in obj.ListOfTasks)
+                    {
+                        //int temp = item.name.Length;
+                        //bw.Write(temp);
+                        bw.Write(item.name);
+
+                        //temp = item.description.Length;
+                        //bw.Write(temp);
+                        bw.Write(item.description);
+
+                        bw.Write(item.DeadLine.Year);
+                        bw.Write(item.DeadLine.Month);
+                        bw.Write(item.DeadLine.Day);
+
+                        //temp = ((int)item.Priority);
+                        bw.Write(((int)item.Priority));
+
+                        //temp = item.Tag.Length;
+                        //bw.Write(temp);
+                        bw.Write(item.Tag);
+                    }
+                }
+            }
+        }
+        public void LoadFromFile(TaskList obj)
+        {
+            string filepath = "tasks.dat";
+            using (FileStream fs = new FileStream(filepath, FileMode.Open,
+                FileAccess.Read, FileShare.None))
+            {
+                using (BinaryReader br = new BinaryReader(fs, Encoding.Unicode))
+                {
+                    TaskList t2 = new TaskList();
+
+                    while (br.PeekChar() > -1)
+                    {
+                        Task tempTask = new Task();
+
+                        tempTask.name = br.ReadString();
+                        tempTask.description = br.ReadString();
+                        tempTask.DeadLine = new DateTime(br.ReadInt32(),
+                            br.ReadInt32(), br.ReadInt32());
+                        tempTask.Priority = (PriorityType)br.ReadInt32();
+                        tempTask.Tag = br.ReadString();
+                        Console.WriteLine(tempTask);
+                        
+                        t2.ListOfTasks.Add(tempTask);
+                    }
+                    obj.ListOfTasks = t2.ListOfTasks;
+                    fs.Close();
+                }
             }
         }
         
@@ -213,38 +408,29 @@ namespace Pattern5_Task1
         static public void Menu()
         {
             Console.Clear();
-            Console.WriteLine("Менеджер Задач");
+            Console.WriteLine("Менеджер Задач\n");
             Console.WriteLine("1. Добавить новую задачу");
             Console.WriteLine("2. Установить приоритеты задачам");
             Console.WriteLine("3. Установить сроки выполнения задач");
             Console.WriteLine("4. Установить теги задач");
             Console.WriteLine("5. Изменить задачу");
             Console.WriteLine("6. Удалить задачу");
-            Console.WriteLine("7. Загрузить задачи из файла");
-            Console.WriteLine("8. Сохранить задачи в файл");
+            Console.WriteLine("7. Сохранить задачи в файл");
+            Console.WriteLine("8. Загрузить задачи из файла");
             Console.WriteLine("9. Поиск задачи");
             Console.WriteLine("10. Показать все задачи");
             Console.WriteLine("0. Завершить программу");
-            Console.WriteLine("Введите команду: ");
+            Console.WriteLine("\nВведите команду: ");
         }
         static void Main(string[] args)
         {
-            Task task1 = new Task("Купить помидоры",
-                "Много",
-                new DateTime(2022, 11, 15),
-                PriorityType.High,
-                "базар");
-            Task task2 = new Task("Починить полочку",
-                "Найти отвертку",
-                new DateTime(2022, 11, 10),
-                PriorityType.Medium,
-                "дом");
             TaskList t1 = new TaskList();
-            t1.ListOfTasks.Add(task1);
-            t1.ListOfTasks.Add(task2);
 
             Invoker invoker = new Invoker();
             Receiver receiver = new Receiver();
+
+            invoker.SetCommand(new LoadFromFile(receiver, t1));
+            invoker.DoCommand();
 
             while (true)
             {
@@ -255,19 +441,67 @@ namespace Pattern5_Task1
                 {
                     case 1:
                         {
+                            Console.Clear();
                             invoker.SetCommand(new AddTask(receiver, t1));
                             invoker.DoCommand();                         
                         }
                         break;
                     case 2:
                         {
+                            Console.Clear();
                             invoker.SetCommand(new SetPriority(receiver, t1));
                             invoker.DoCommand();
                         }
                         break;
                     case 3:
                         {
+                            Console.Clear();
                             invoker.SetCommand(new SetDeadLines(receiver, t1));
+                            invoker.DoCommand();
+                        }
+                        break;
+                    case 4:
+                        {
+                            Console.Clear();
+                            invoker.SetCommand(new SetTags(receiver, t1));
+                            invoker.DoCommand();
+                        }
+                        break;
+                    case 5:
+                        {
+                            Console.Clear();
+                            invoker.SetCommand(new PrintTasks(receiver, t1));
+                            invoker.DoCommand();
+                            invoker.SetCommand(new ChangeTask(receiver, t1));
+                            invoker.DoCommand();                           
+                        }
+                        break;
+                    case 6:
+                        {
+                            Console.Clear();
+                            invoker.SetCommand(new PrintTasks(receiver, t1));
+                            invoker.DoCommand();
+                            invoker.SetCommand(new DeleteTask(receiver, t1));
+                            invoker.DoCommand();
+                            
+                        }
+                        break;
+                    case 7:
+                        {
+                            Console.Clear();
+                            Console.WriteLine("Введите имя файла: ");
+                            string filename = Console.ReadLine();
+                            invoker.SetCommand(new SaveToFile(receiver, t1, filename));
+                            invoker.DoCommand();
+                            Console.WriteLine($"Файл {filename}.dat сохранен успешно.");
+                            Console.WriteLine("Нажмите кнопку Enter, чтобы продолжить");
+                            Console.ReadLine();
+                        }
+                        break;
+                    case 8:
+                        {
+                            Console.Clear();
+                            invoker.SetCommand(new LoadFromFile(receiver, t1));
                             invoker.DoCommand();
                         }
                         break;
@@ -281,6 +515,10 @@ namespace Pattern5_Task1
                         }
                         break;
                     case 0:
+                        {
+                            invoker.SetCommand(new SaveToFile(receiver, t1));
+                            invoker.DoCommand();
+                        }
                         return;
                     default:
                         {
@@ -289,6 +527,9 @@ namespace Pattern5_Task1
                         break;
                 }
             }
+
+            
+
         }
     }   
 }
