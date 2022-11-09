@@ -205,6 +205,43 @@ namespace Pattern5_Task1
             receiver.LoadFromFile(taskList, filepath);
         }
     }
+    class FindTasks:ICommand
+    {
+        public string findtag { get; set; }
+        public DateTime finddate { get; set; }
+        public int findpriority { get; set; }
+
+        private TaskList taskList;
+        private Receiver receiver;
+        public FindTasks(Receiver _receiver, TaskList _taskList, string str)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+            findtag = str;
+            finddate = default;
+            findpriority = -1;
+        }
+        public FindTasks(Receiver _receiver, TaskList _taskList, DateTime _date)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+            findtag = string.Empty;
+            finddate = _date;
+            findpriority = -1;
+        }
+        public FindTasks(Receiver _receiver, TaskList _taskList, int pt)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+            findtag = string.Empty;
+            finddate = default;
+            findpriority = pt;
+        }
+        public void Execute()
+        {
+            receiver.FindTasks(taskList, findtag, finddate, findpriority);
+        }
+    }
     class Receiver
     {
         public void AddTask(TaskList obj)
@@ -335,23 +372,16 @@ namespace Pattern5_Task1
                 {
                     foreach(var item in obj.ListOfTasks)
                     {
-                        //int temp = item.name.Length;
-                        //bw.Write(temp);
                         bw.Write(item.name);
 
-                        //temp = item.description.Length;
-                        //bw.Write(temp);
                         bw.Write(item.description);
 
                         bw.Write(item.DeadLine.Year);
                         bw.Write(item.DeadLine.Month);
                         bw.Write(item.DeadLine.Day);
 
-                        //temp = ((int)item.Priority);
                         bw.Write(((int)item.Priority));
 
-                        //temp = item.Tag.Length;
-                        //bw.Write(temp);
                         bw.Write(item.Tag);
                     }
                 }
@@ -384,7 +414,38 @@ namespace Pattern5_Task1
                 }
             }
         }
-        
+        public void FindTasks(TaskList obj, string _tag, DateTime _date, 
+            int _pt)
+        {
+            if (_tag != String.Empty)
+            {
+                Console.WriteLine($"Элементы с тэгом {_tag}:\n");
+                foreach(Task task in obj.ListOfTasks.FindAll(x => x.Tag.Contains(_tag)))
+                {
+                    Console.WriteLine(task);
+                }
+            }
+
+            if(_date != default)
+            {
+                Console.WriteLine($"Элементы с дедлайном до {_date}:\n");
+                foreach (Task task in obj.ListOfTasks.FindAll(x => (x.DeadLine < _date)))
+                {
+                    Console.WriteLine(task);
+                }
+            }
+
+            if (_pt != -1)
+            {
+                Console.WriteLine($"Элементы с приоритетом {(PriorityType)_pt}:\n");
+
+                foreach (Task task in obj.ListOfTasks.FindAll(x => (x.Priority.Equals((PriorityType)_pt))))
+                {
+                    Console.WriteLine(task);
+                }
+            }
+
+        }  
     }
     class Invoker
     {
@@ -426,6 +487,16 @@ namespace Pattern5_Task1
             Console.WriteLine("9. Поиск задачи");
             Console.WriteLine("10. Показать все задачи");
             Console.WriteLine("0. Завершить программу");
+            Console.WriteLine("\nВведите команду: ");
+        }
+        static public void FindMenu()
+        {
+            Console.Clear();
+            Console.WriteLine("Поиск по критерию\n");
+            Console.WriteLine("1. Дата");
+            Console.WriteLine("2. Тег");
+            Console.WriteLine("3. Приоритет");
+            Console.WriteLine("0. Вернуться в основное меню");
             Console.WriteLine("\nВведите команду: ");
         }
         static void Main(string[] args)
@@ -514,6 +585,55 @@ namespace Pattern5_Task1
                             Console.WriteLine($"Файл {filename}.dat загружен успешно.");
                             Console.WriteLine("Нажмите кнопку Enter, чтобы продолжить");
                             Console.ReadLine();
+                        }
+                        break;
+                    case 9:
+                        {
+                            Console.Clear();
+                            FindMenu();
+                            int ch1 = Convert.ToInt32(Console.ReadLine());
+
+                            switch (ch1)
+                            {
+                                case 1:
+                                    {                            
+                                        Console.Write("Введите дату: ");
+                                        DateTime tDate = DateTime.Parse(Console.ReadLine());
+
+                                        invoker.SetCommand(new FindTasks(receiver, t1, tDate));
+                                        invoker.DoCommand();
+                                        Console.ReadLine();
+                                    }
+                                    break;
+                                case 2:
+                                    {
+                                        Console.Write("Введите тэг: ");
+                                        string _tag = Console.ReadLine();
+
+                                        invoker.SetCommand(new FindTasks(receiver, t1, _tag));
+                                        invoker.DoCommand();
+                                        Console.ReadLine();
+                                    }
+                                    break;
+                                case 3:
+                                    {
+                                        Console.WriteLine("Выберите приоритет: 1-низкий; " +
+                                                        "2 - средний; 3 - высокий");
+                                        int temp = Convert.ToInt32(Console.ReadLine()) - 1;
+
+                                        invoker.SetCommand(new FindTasks(receiver, t1, temp));
+                                        invoker.DoCommand();
+                                        Console.ReadLine();
+                                    }
+                                    break;
+                                case 0:
+                                    return;
+                                default:
+                                    {
+                                        Console.WriteLine("Неверный выбор");
+                                    }
+                                    break;
+                            }
                         }
                         break;
                     case 10:
