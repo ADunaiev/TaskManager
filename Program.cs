@@ -170,13 +170,13 @@ namespace Pattern5_Task1
         {
             receiver = _receiver;
             taskList = _taskList;
-            filepath = "tasks.dat";
+            filepath = "../../tasks.dat";
         }
         public SaveToFile(Receiver _receiver, TaskList _taskList, string str)
         {
             receiver = _receiver;
             taskList = _taskList;
-            filepath = str + ".dat";
+            filepath = "../../" + str + ".dat";
         }
         public void Execute()
         {
@@ -185,16 +185,24 @@ namespace Pattern5_Task1
     }
     class LoadFromFile:ICommand
     {
+        public string filepath { get; set; }
         private TaskList taskList;
         private Receiver receiver;
         public LoadFromFile(Receiver _receiver, TaskList _taskList)
         {
             receiver = _receiver;
             taskList = _taskList;
+            filepath = "../../tasks.dat";
+        }
+        public LoadFromFile(Receiver _receiver, TaskList _taskList, string str)
+        {
+            receiver = _receiver;
+            taskList = _taskList;
+            filepath = "../../" + str + ".dat";
         }
         public void Execute()
         {
-            receiver.LoadFromFile(taskList);
+            receiver.LoadFromFile(taskList, filepath);
         }
     }
     class Receiver
@@ -349,10 +357,9 @@ namespace Pattern5_Task1
                 }
             }
         }
-        public void LoadFromFile(TaskList obj)
+        public void LoadFromFile(TaskList obj, string _filepath)
         {
-            string filepath = "tasks.dat";
-            using (FileStream fs = new FileStream(filepath, FileMode.Open,
+            using (FileStream fs = new FileStream(_filepath, FileMode.Open,
                 FileAccess.Read, FileShare.None))
             {
                 using (BinaryReader br = new BinaryReader(fs, Encoding.Unicode))
@@ -368,8 +375,7 @@ namespace Pattern5_Task1
                         tempTask.DeadLine = new DateTime(br.ReadInt32(),
                             br.ReadInt32(), br.ReadInt32());
                         tempTask.Priority = (PriorityType)br.ReadInt32();
-                        tempTask.Tag = br.ReadString();
-                        Console.WriteLine(tempTask);
+                        tempTask.Tag = br.ReadString();                   
                         
                         t2.ListOfTasks.Add(tempTask);
                     }
@@ -501,8 +507,13 @@ namespace Pattern5_Task1
                     case 8:
                         {
                             Console.Clear();
-                            invoker.SetCommand(new LoadFromFile(receiver, t1));
+                            Console.WriteLine("Введите имя файла: ");
+                            string filename = Console.ReadLine();
+                            invoker.SetCommand(new LoadFromFile(receiver, t1, filename));
                             invoker.DoCommand();
+                            Console.WriteLine($"Файл {filename}.dat загружен успешно.");
+                            Console.WriteLine("Нажмите кнопку Enter, чтобы продолжить");
+                            Console.ReadLine();
                         }
                         break;
                     case 10:
